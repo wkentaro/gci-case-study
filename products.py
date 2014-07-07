@@ -74,8 +74,7 @@ def insert_attributes2mysql(attrs):
 
 def main():
     # product description page urls
-    #urls = get_product_urls(page_lim=53)
-    urls = get_product_urls(page_lim=1)
+    urls = get_product_urls(page_lim=53)
 
     # get attributes of products
     attrs = []
