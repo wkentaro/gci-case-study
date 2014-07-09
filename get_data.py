@@ -67,7 +67,12 @@ def insert_attributes2mysql(attrs):
         sql = u"""INSERT INTO beauty_electronics (product_id, product_nm, price, purposes) \
                 VALUES ('{0}', '{1}', {2}, '{3}')""".format(attr.product_id, attr.product_nm, \
                 attr.price, u','.join(attr.purposes))
-        cursor.execute(sql)
+        try:
+            cursor.execute(sql)
+        except MySQLdb.IntegrityError:
+            pass
+        except MySQLdb.OperationalError:
+            pass
     db.commit()
     db.close()
 
