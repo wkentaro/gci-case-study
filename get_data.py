@@ -53,8 +53,11 @@ def get_product_attributes(product_url):
     a_purposes = dt_purposes.parent.find_all('a')
     purposes = [ap.text for ap in a_purposes]
 
-    Attributes = namedtuple('Attributes', 'product_id product_nm price purposes')
-    attr = Attributes(product_id, product_nm, price, purposes)
+    # review count
+    review_count = int(soup.find('span', {'itemprop': 'reviewCount'}).text)
+
+    Attributes = namedtuple('Attributes', 'product_id product_nm price purposes review_count')
+    attr = Attributes(product_id, product_nm, price, purposes, review_count)
     return attr
 
 def insert_attributes2mysql(attrs):
@@ -64,9 +67,11 @@ def insert_attributes2mysql(attrs):
     for attr in attrs:
         if None in attr:
             continue
-        sql = u"""INSERT INTO beauty_electronics (product_id, product_nm, price, purposes) \
-                VALUES ('{0}', '{1}', {2}, '{3}')""".format(attr.product_id, attr.product_nm, \
-                attr.price, u','.join(attr.purposes))
+        sql = u"""INSERT INTO beauty_electronics \
+                (product_id, product_nm, price, purposes, review_count) \
+                VALUES ('{0}', '{1}', {2}, '{3}', {4})"""
+        sql = sql.format(attr.product_id, attr.product_nm,\
+                attr.price, u','.join(attr.purposes), attr.review_count)
         try:
             cursor.execute(sql)
         except MySQLdb.IntegrityError:
