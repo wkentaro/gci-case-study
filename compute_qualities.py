@@ -8,6 +8,7 @@ import MySQLdb
 import collections
 import numpy as np
 from sklearn import cluster
+from sklearn import preprocessing
 def connect_db():
     """Connect to the database"""
     db = MySQLdb.connect(db=config.db, host=config.host,\
@@ -73,10 +74,11 @@ def compute_qualities():
     products_info = create_products_info()
 
     # 効用毎の売上を計算
+    all_review_count = 0
     sales_of_purposes = collections.defaultdict(float)
     for product_id, product_info in products_info.items():
         for purpose in product_info['purposes']:
-            sales_of_purposes[purpose] += product_info['price']
+            sales_of_purposes[purpose] += product_info['price'] * product_info['review_count']
 
     # 効用毎の売上割合を計算(高級度)
     max_sales = max(sales_of_purposes.values())
@@ -85,25 +87,30 @@ def compute_qualities():
 
     # 商品ごとに効用の高級度を計算(販売数をかける)
     # このデータを元にクラスタリングを行う
-    quality_of_producs = {}
+    quality_of_products = {}
     for product_id, product_info in products_info.items():
-        quality_of_producs[product_id] = {}
+        quality_of_products[product_id] = {}
         for purpose, sales in sales_of_purposes.items():
-            quality_of_producs[product_id][purpose] =\
-                    sales * product_info['review_count']
+            if purpose in product_info['purposes']:
+                #ratioof_review_count = product_info['review_count'] / float(all_review_count)
+                #quality_of_products[product_id][purpose] = sales * ratioof_review_count
+                quality_of_products[product_id][purpose] = sales
+            else:
+                quality_of_products[product_id][purpose] = 0.0
 
     # クラスタリングのためにXを作成する
     ref = []
     X = []
-    X_header = quality_of_producs.values()[0].keys()
-    for product_id, quality in quality_of_producs.items():
+    X_header = quality_of_products.values()[0].keys()
+    for product_id, quality in quality_of_products.items():
         ref.append(product_id)
         X.append(quality.values())
     X = np.array(X)
 
     # クラスタリングを行う
+    X_scale = preprocessing.scale(X)
     km = cluster.MiniBatchKMeans(n_clusters=8, n_init=10)
-    km.fit(X)
+    km.fit(X_scale)
 
     return products_info, ref, km.labels_, X, X_header
 
